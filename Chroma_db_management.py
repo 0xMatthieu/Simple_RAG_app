@@ -16,7 +16,7 @@ except:
     print("pysqlite not available")
 
 class ChromaDb(object):
-    def __init__(self, txt_directory = 'Database\\Public\\Files', chroma_db_directory = 'Database\\Public\\Chroma_DB\\'):
+    def __init__(self, txt_directory = './Database/Public/Files/', chroma_db_directory = './Database/Public/Chroma_DB/'):
         
         # init some variables
         self.unstructured_available = False
@@ -49,8 +49,10 @@ class ChromaDb(object):
 
         for item in files:
             if item['source'] not in seen_sources:
+                #st.write(item['source'])
                 unique_data.append(item)
-                seen_sources.add(item['source'].rsplit('\\', 1)[1])
+                filename = item['source'].replace('/', '\\').rsplit('\\', 1)[1]
+                seen_sources.add(filename)
         seen_sources = list(seen_sources)
         #print(seen_sources)
         return seen_sources

@@ -51,8 +51,8 @@ class ChatController(object):
         self.use_private_data = False
         self.llm_model = "gpt-3.5-turbo-0125"#"gpt-4-turbo-preview"
         self.retriever_output_number = 4 #default value is 4
-        self.vectordb = ChromaDb(txt_directory = 'Database\\Public\\Files\\', chroma_db_directory = 'Database\\Public\\Chroma_DB\\')
-        self.vectordb_private = ChromaDb(txt_directory = 'Database\\Private\\Files\\', chroma_db_directory = 'Database\\Private\\Chroma_DB\\')
+        self.vectordb = ChromaDb(txt_directory = './Database/Public/Files/', chroma_db_directory = './Database/Public/Chroma_DB/')
+        self.vectordb_private = ChromaDb(txt_directory = './Database/Private/Files/', chroma_db_directory = './Database/Private/Chroma_DB/')
         self.agent_prompt = """Assistant is a large language model trained by OpenAI.
 
             Assistant is designed to be able to assist with a wide range of tasks, 
@@ -214,6 +214,14 @@ if __name__ == "__main__":
     print("done")
     
     
-    #chat.ask("How to use ... ?")
+    #chat.ask("How to use TTC 500 external RAM in C ?")
+    #chat.ask('how to use PWM outputs on the TTC500 in C ?')
+    #chat.rag_chain.invoke('how to use PWM outputs on the TTC500 in C ?')
     #chat.ask('can you do 5 x 5 + 2 x 2 ?')
-
+    #chat.ask('what combinations can be done with HDA 7000 ?')
+    #chat.ask("How to use IO link on HMG 4000 ? Can it be used on HMG 3010 too ?")
+    #chat.vectordb.add_or_delete_a_document(filepath = 'PDF_private\\Configurator.xlsx', method = 'Delete')
+    #chat.vectordb.add_or_delete_a_document(filepath = 'PDF_private\\2300_PxPanic() and PxAbort().txt', method = 'Delete')
+    #chat.vectordb.list_all_chromadb_files()
+    #chat.vectordb.add_missing_document_to_chroma_database()
+    #chat.vectordb.add_a_directory_to_chroma_database(txt_directory = chat.vectordb.txt_directory)

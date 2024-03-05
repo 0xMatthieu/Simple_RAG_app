@@ -3,7 +3,6 @@ import pandas as pd
 from Data_management import ChatController
 from importlib.metadata import version
 
-
 def app_init():
     # Initialize session_state if it doesn't exist
     if 'chat' not in st.session_state:
