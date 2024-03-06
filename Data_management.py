@@ -5,7 +5,7 @@ from langchain_openai import ChatOpenAI
 from langchain.chains import RetrievalQA
 
 from langchain.prompts import PromptTemplate
-from langchain.agents import Tool, AgentExecutor, AgentType, initialize_agent, create_structured_chat_agent
+from langchain.agents import Tool, AgentExecutor, initialize_agent, create_structured_chat_agent
 from langchain.memory import ConversationBufferMemory
 from langchain.chains import LLMMathChain
 
@@ -55,12 +55,41 @@ class ChatController(object):
         self.vectordb_private = ChromaDb(txt_directory = './Database/Private/Files/', chroma_db_directory = './Database/Private/Chroma_DB/')
         self.agent_prompt = """Assistant is a large language model trained by OpenAI.
 
-            Assistant is designed to be able to assist with a wide range of tasks, 
-            from answering simple questions to providing in-depth explanations and discussions on a wide range of topics. 
+            Respond to the human as helpfully and accurately as possible. You have access to the following tools:
 
-            Overall, Assistant is a powerful system that can help with a wide range of tasks and provide valuable insights 
-            and information on a wide range of topics. Whether you need help with a specific question or 
-            just want to have a conversation about a particular topic, Assistant is here to assist.
+            {tools}
+
+            Use a json blob to specify a tool by providing an action key (tool name) and an action_input key (tool input).
+            Valid "action" values: "Final Answer" or {tool_names}
+
+            Provide only ONE action per $JSON_BLOB, as shown:
+
+            ```
+            {{
+              "action": $TOOL_NAME,
+              "action_input": $INPUT
+            }}
+            ```
+
+            Follow this format:
+
+            Question: input question to answer
+            Thought: consider previous and subsequent steps
+            Action:
+            ```
+            $JSON_BLOB
+            ```
+            Observation: action result
+            ... (repeat Thought/Action/Observation N times)
+            Thought: I know what to respond
+            Action:
+            ```
+            {{
+              "action": "Final Answer",
+              "action_input": "Final response to human"
+            }}
+
+            Begin! Reminder to ALWAYS respond with a valid json blob of a single action. Use tools if necessary. Respond directly if appropriate. Format is Action:```$JSON_BLOB```then Observation 
 
             If the context is not relevant, 
             please answer the question by using your own knowledge about the topic and let context empty
@@ -152,7 +181,7 @@ class ChatController(object):
         ]
         
         prompt = hub.pull("hwchase17/structured-chat-agent")
-        self.agent_prompt= prompt.messages[0].prompt.template
+        #self.agent_prompt= prompt.messages[0].prompt.template
         agent = create_structured_chat_agent(
             llm=turbo_llm,
             tools=tools,
@@ -214,14 +243,6 @@ if __name__ == "__main__":
     print("done")
     
     
-    #chat.ask("How to use TTC 500 external RAM in C ?")
-    #chat.ask('how to use PWM outputs on the TTC500 in C ?')
-    #chat.rag_chain.invoke('how to use PWM outputs on the TTC500 in C ?')
+    #chat.ask("How to use ... in C ?")
     #chat.ask('can you do 5 x 5 + 2 x 2 ?')
-    #chat.ask('what combinations can be done with HDA 7000 ?')
-    #chat.ask("How to use IO link on HMG 4000 ? Can it be used on HMG 3010 too ?")
-    #chat.vectordb.add_or_delete_a_document(filepath = 'PDF_private\\Configurator.xlsx', method = 'Delete')
-    #chat.vectordb.add_or_delete_a_document(filepath = 'PDF_private\\2300_PxPanic() and PxAbort().txt', method = 'Delete')
-    #chat.vectordb.list_all_chromadb_files()
-    #chat.vectordb.add_missing_document_to_chroma_database()
-    #chat.vectordb.add_a_directory_to_chroma_database(txt_directory = chat.vectordb.txt_directory)
+
