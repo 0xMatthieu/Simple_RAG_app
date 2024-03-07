@@ -14,6 +14,8 @@ from langchain import hub
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
 
+from langchain.tools.base import StructuredTool
+from langchain_core.pydantic_v1 import BaseModel, Field
 
 from langchain.retrievers import MergerRetriever
 
@@ -89,10 +91,8 @@ class ChatController(object):
               "action_input": "Final response to human"
             }}
 
-            Begin! Reminder to ALWAYS respond with a valid json blob of a single action. Use tools if necessary. Respond directly if appropriate. Format is Action:```$JSON_BLOB```then Observation 
-
-            If the context is not relevant, 
-            please answer the question by using your own knowledge about the topic and let context empty
+            Begin! Reminder to ALWAYS respond with a valid json blob of a single action. Use tools if necessary. Respond directly and use your own knowledge if appropriate. 
+            Format is Action:```$JSON_BLOB```then Observation 
             """
         self.retrieval_prompt = """You are an assistant for question-answering tasks. 
             Use the following pieces of retrieved context to answer the question. 
@@ -165,12 +165,20 @@ class ChatController(object):
                                             
 
         math_chain = LLMMathChain.from_llm(llm=turbo_llm)
+
+        class Document_inputs(BaseModel):
+            """Inputs to the document tool."""
+
+            input: str = Field(
+                description="query to look up in tool"
+            )
                
         tools = [
-            Tool(
+            StructuredTool(
                 name="Document tool",
                 func=qa_chain.invoke,
                 description="Use this tool when you need to answer question about technical products.",
+                args_schema=Document_inputs
             ), 
             
             Tool(
@@ -181,7 +189,8 @@ class ChatController(object):
         ]
         
         prompt = hub.pull("hwchase17/structured-chat-agent")
-        #self.agent_prompt= prompt.messages[0].prompt.template
+        
+        prompt.messages[0].prompt.template = self.agent_prompt
         agent = create_structured_chat_agent(
             llm=turbo_llm,
             tools=tools,
@@ -243,6 +252,14 @@ if __name__ == "__main__":
     print("done")
     
     
-    #chat.ask("How to use ... in C ?")
+    #chat.ask("How to use TTC 500 external RAM in C ?")
+    #chat.ask('how to use PWM outputs on the TTC500 in C ?')
+    #chat.rag_chain.invoke('how to use PWM outputs on the TTC500 in C ?')
     #chat.ask('can you do 5 x 5 + 2 x 2 ?')
-
+    #chat.ask('what combinations can be done with HDA 7000 ?')
+    #chat.ask("How to use IO link on HMG 4000 ? Can it be used on HMG 3010 too ?")
+    #chat.vectordb.add_or_delete_a_document(filepath = 'PDF_private\\Configurator.xlsx', method = 'Delete')
+    #chat.vectordb.add_or_delete_a_document(filepath = 'PDF_private\\2300_PxPanic() and PxAbort().txt', method = 'Delete')
+    #chat.vectordb.list_all_chromadb_files()
+    #chat.vectordb.add_missing_document_to_chroma_database()
+    #chat.vectordb.add_a_directory_to_chroma_database(txt_directory = chat.vectordb.txt_directory)
