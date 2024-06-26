@@ -163,7 +163,7 @@ class ChromaDb(object):
             print("document added to the DB")
             self.vectordb.add_documents(documents=unique_texts,
                                      ids=unique_ids,
-                                     collection_metadata={"hnsw:space": "cosine"})
+                                     collection_metadata={"hnsw:space": "l2"})
 
             # Save the db locally to disk
             self.vectordb.persist()
