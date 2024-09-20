@@ -1,3 +1,5 @@
+import time
+start_time = time.time()
 import streamlit as st
 import pandas as pd
 from Data_management import ChatController
@@ -17,7 +19,7 @@ def library_version_display():
         st.write('streamlit version is ' + version('streamlit'))
         st.write('openai version is ' + version('openai'))
         st.write('langchain version is ' + version('langchain'))
-        st.write('langchain_community version is ' + version('langchain_community'))
+        #st.write('langchain_community version is ' + version('langchain_community'))
         
 def write_files_trained_on():
     files_trained_on_expander = st.expander(label='App was trained on following files:')
@@ -42,19 +44,21 @@ def app_parameters():
         # Adding a select button
         st.session_state.chat.llm_model = st.selectbox(
                 label = 'Choose a model:',
-                options = ('gpt-3.5-turbo-0125', 'gpt-4-turbo-preview'),
+                options = ('gpt-4o-mini', 'gpt-4o-2024-08-06'),
                 index = 0,
+                key='model selectbox',
                 on_change =st.session_state.chat.update_llm_model, args =("llm model",))
                
         st.write('You selected:', st.session_state.chat.llm_model)
-        st.write('GPT4 is currently 20x more expensive than GPT3.5')
             
         st.session_state.chat.use_agent = st.checkbox(label='Use agent', 
             value=st.session_state.chat.use_agent,
+            key='Use agent',
             on_change =st.session_state.chat.update_llm_model, args =("use agent",))
 
         integer_value = st.number_input(
             label='Number of documents returned by the retriever, default value is 4:',
+            key='Retriever document',
             min_value=0,  # Minimum value
             max_value=100,  # Maximum value
             value=st.session_state.chat.retriever_output_number,  # Default value from session state
@@ -65,17 +69,7 @@ def app_parameters():
         if integer_value != st.session_state.chat.retriever_output_number:
             st.session_state.chat.retriever_output_number = integer_value  # Update the session state
             st.session_state.chat.update_llm_model("retriever output number")
-            
-        # Retrieval prompt
-        st.session_state.chat.retrieval_prompt = st.text_area("retrieval prompt", st.session_state.chat.retrieval_prompt)
 
-        # Agent prompt
-        st.session_state.chat.agent_prompt = st.text_area("agent prompt", st.session_state.chat.agent_prompt)
-
-        if st.button('Modify'):
-            st.session_state.chat.update_llm_model("update prompt")
-
-    st.session_state.chat.do_update() 
 
 def manage_chroma_db():
     db_expander = st.expander(label='Chroma DB management')
@@ -83,14 +77,22 @@ def manage_chroma_db():
     with db_expander:
 
         # test to use more than one DB and a merge retriever function
-        st.session_state.chat.use_private_data = st.checkbox(label='Use private database', 
+        st.session_state.chat.use_private_data = st.checkbox(label='Use private database',
+            key='Use private data', 
             value=st.session_state.chat.use_private_data,
             on_change =st.session_state.chat.update_llm_model, args =("use private data",))
+        
+        # test to use Raptor DB
+        st.session_state.chat.use_Raptor = st.checkbox(label='Use Raptor',
+            key='Use raptor', 
+            value=st.session_state.chat.use_Raptor,
+            on_change =st.session_state.chat.update_llm_model, args =("use raptor",))
         
         # Adding a select button to choose a DB
         selected_db = st.selectbox(
                 label = 'Choose a DB:',
-                options = ('public', 'private'),
+                key='Choose db',
+                options = ('public', 'private', 'Raptor'),
                 index = 0)
         
         st.write('You selected the following db:', selected_db)
@@ -100,19 +102,19 @@ def manage_chroma_db():
                     vector_db = st.session_state.chat.vectordb
                 case 'private':
                     vector_db = st.session_state.chat.vectordb_private
+                case 'Raptor':
+                    vector_db = st.session_state.chat.vectordb_raptor
 
         # button to add missing files
-        if st.button('Add missing files to DB'):
+        if st.button('Add missing files to DB', key='add missing document to db'):
             vector_db.add_missing_document_to_chroma_database()
                 
         # Delete a document
-        path_to_doc_to_delete = st.text_input("Document to delete (case sensitive)")
+        path_to_doc_to_delete = st.text_input("Document to delete (case sensitive)", key='path to delete')
 
         # button to delete a document
-        if st.button('Delete document'):
-            vector_db.add_or_delete_a_document(filepath = path_to_doc_to_delete, method = 'Delete')
-
-    st.session_state.chat.do_update() 
+        if st.button('Delete document', key='delete document'):
+            vector_db.add_or_delete_a_document(filepath = path_to_doc_to_delete, method = 'Delete') 
 
 
 # This is the title of the app
@@ -127,37 +129,31 @@ with st.sidebar:
     manage_chroma_db()
     app_parameters()
     
-
+st.session_state.chat.do_update()
 
 # User types their message into the text_input
-user_input = st.text_input("Type your message here")
+user_input = st.text_input("Type your message here", key='text input')
 
-if st.button('Send'):
+if st.button('Send', key='send'):
     # Add user's message to chat history
     st.session_state.chat_history.append(f"User: {user_input}")
-
-    # tokenize the new input sentence
-    st.session_state.chat.message_history.append({"role": "user", "content": f"{user_input}"})
 
     # Here, instead of echoing the user's message, you would 
     # call your chatbot function and generate a response
     reply_content = st.session_state.chat.ask(user_input)
     
-    # append the new reply to the message history
-    st.session_state.chat.message_history.append({"role": "assistant", "content": f"{reply_content}"}) 
-    
     bot_response = f"Assistant: {reply_content}"
     st.session_state.chat_history.append(f"{bot_response}")
 
-# Assuming that chat history is arranged in question-answer-question-answer...
-for i in range(len(st.session_state.chat_history)-1, -1, -2):
-    st.markdown(f"<p style='color:green'>Q: {st.session_state.chat_history[i-1]}</p>", unsafe_allow_html=True)
-    st.write(f"A: {st.session_state.chat_history[i]}")
+    # Assuming that chat history is arranged in question-answer-question-answer...
+    for i in range(len(st.session_state.chat_history)-1, -1, -2):
+        st.markdown(f"<p style='color:green'>Q: {st.session_state.chat_history[i-1]}</p>", unsafe_allow_html=True)
+        st.write(f"A: {st.session_state.chat_history[i]}")
     
 # Button to clear chat history
-if st.button('Clear chat history'):
+if st.button('Clear chat history', key='clear chat history'):
     st.session_state.chat_history = []
-    st.session_state.chat.message_history = []
 
 st.write('\n')
+print(f"Time to execute streamlit: {time.time() - start_time}")
 
